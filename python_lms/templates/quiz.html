@@ -1,0 +1,275 @@
+<!--
+================================================================================
+CLARITY LMS - Page 4: Interactive MCQ Quiz & Certificate Page
+================================================================================
+File: templates/quiz.html
+Description: Interactive multiple-choice examination with automated backend
+             scoring evaluation, instant pass/fail feedback, and dynamic
+             certificate modal generator with print and PDF export capabilities.
+================================================================================
+-->
+{% extends "base.html" %}
+
+{% block title %}Assessment Quiz &amp; Certificate - Clarity LMS{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-950 text-slate-100 py-10">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    
+    <!-- Breadcrumb & Top Bar -->
+    <div class="flex items-center justify-between text-xs text-slate-400">
+      <a href="{{ url_for('course_detail', course_id=course.id) }}" class="hover:text-white flex items-center gap-1">
+        &larr; Back to {{ course.title }}
+      </a>
+      <span class="font-mono text-emerald-400">Passing Grade: {{ quiz.passing_score }}%</span>
+    </div>
+
+    <!-- Quiz Header Banner -->
+    <div class="p-6 sm:p-8 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <span class="text-xs font-mono font-bold text-blue-400 uppercase tracking-wider">Formal Certification Assessment</span>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-white mt-1">{{ quiz.title }}</h1>
+        <p class="text-xs text-slate-400 mt-1.5 max-w-xl leading-relaxed">
+          Evaluate your architectural decision-making. Answer all scenario questions below. Scoring at least {{ quiz.passing_score }}% will instantly unlock your verifiable certificate.
+        </p>
+      </div>
+      <div class="text-xs font-mono text-slate-400 bg-slate-950 px-4 py-2.5 rounded-xl border border-slate-800 shrink-0 text-center">
+        <span class="block text-lg font-bold text-white">{{ quiz.questions|length }}</span>
+        <span>Questions</span>
+      </div>
+    </div>
+
+    <!-- Dynamic Result Banner (Shown if evaluated) -->
+    <div
+      id="result-banner"
+      class="{{ 'p-6 rounded-2xl border space-y-3' if user_result else 'hidden p-6 rounded-2xl border space-y-3' }} {{ 'bg-emerald-950/40 border-emerald-500/40 text-emerald-100' if user_result and user_result.passed else 'bg-rose-950/40 border-rose-500/40 text-rose-100' }}"
+    >
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 class="text-lg font-bold text-white" id="result-status-title">
+            {% if user_result %}
+              {{ '🎉 Congratulations! You Passed the Assessment.' if user_result.passed else 'Assessment Not Passed' }}
+            {% endif %}
+          </h3>
+          <p class="text-xs text-slate-300 mt-0.5">
+            Your Score: <strong class="font-mono text-base text-white" id="result-score-val">{{ user_result.score if user_result else 0 }}%</strong>
+            <span>(Minimum {{ quiz.passing_score }}% required to certify)</span>
+          </p>
+        </div>
+
+        <button
+          type="button"
+          id="btn-show-cert"
+          onclick="openCertificateModal()"
+          class="{{ '' if user_result and user_result.passed else 'hidden' }} px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2"
+        >
+          <span>🏆 Download Certificate</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Interactive MCQ Form -->
+    <form id="quiz-form" onsubmit="submitAssessment(event)" class="space-y-6">
+      {% for q in quiz.questions %}
+        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 hover:border-slate-700 transition-colors">
+          
+          <div class="flex items-start gap-3">
+            <span class="w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 font-mono text-xs font-bold flex items-center justify-center shrink-0 border border-blue-500/30">
+              Q{{ loop.index }}
+            </span>
+            <div class="space-y-1">
+              <h3 class="text-sm font-bold text-white leading-relaxed">{{ q.question_text }}</h3>
+              <p class="text-[11px] text-slate-500 font-mono">Single choice scenario</p>
+            </div>
+          </div>
+
+          <!-- Options Grid -->
+          <div class="space-y-2.5 pt-1 pl-10">
+            {% for opt in q.get_options() %}
+              <label class="p-3.5 rounded-xl border border-slate-800 bg-slate-950/80 hover:bg-slate-800/60 hover:border-slate-700 text-slate-300 flex items-center gap-3 cursor-pointer text-xs transition-colors group">
+                <input
+                  type="radio"
+                  name="q_{{ q.id }}"
+                  value="{{ opt.id }}"
+                  required
+                  class="w-4 h-4 text-blue-600 bg-slate-800 border-slate-700 focus:ring-0 cursor-pointer accent-blue-500"
+                >
+                <span class="group-hover:text-white leading-relaxed">{{ opt.text }}</span>
+              </label>
+            {% endfor %}
+          </div>
+
+        </div>
+      {% endfor %}
+
+      <!-- Form Submission Controls -->
+      <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <p class="text-xs text-slate-400">
+          Submissions are evaluated immediately by the Python backend via SQLAlchemy queries.
+        </p>
+        <button
+          type="submit"
+          id="submit-quiz-btn"
+          class="py-3 px-8 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-blue-600/30 transition-all"
+        >
+          Submit for Grading
+        </button>
+      </div>
+    </form>
+
+  </div>
+
+  <!-- Accredited Certificate Modal Window -->
+  <div
+    id="certificate-modal"
+    class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4"
+  >
+    <div class="max-w-2xl w-full bg-slate-900 rounded-3xl border-2 border-emerald-500/40 p-8 sm:p-10 text-center space-y-6 shadow-2xl relative">
+      
+      <!-- Close Icon Button -->
+      <button
+        onclick="closeCertificateModal()"
+        class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl p-2"
+      >
+        &times;
+      </button>
+
+      <!-- Certificate Header -->
+      <div class="space-y-1">
+        <div class="text-[10px] font-mono font-black tracking-widest text-emerald-400 uppercase">
+          CLARITY LEARNING SYSTEMS · OFFICIAL ACCREDITATION
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Certificate of Systems Excellence</h2>
+        <p class="text-xs text-slate-400">This credential certifies that</p>
+      </div>
+
+      <!-- Recipient Name -->
+      <div class="py-2 border-b border-t border-slate-800">
+        <h3 class="text-3xl sm:text-4xl font-extrabold text-emerald-300">
+          {{ current_user.name if current_user else 'Alex Morgan' }}
+        </h3>
+        <p class="text-xs text-slate-300 mt-1">
+          has successfully demonstrated architectural mastery in
+        </p>
+        <p class="text-base font-bold text-white mt-1">
+          {{ course.title }}
+        </p>
+      </div>
+
+      <!-- Verification Metadata -->
+      <div class="grid grid-cols-2 gap-4 text-xs font-mono text-slate-400 text-left pt-2">
+        <div>
+          <span class="text-[10px] uppercase block text-slate-500">Instructor Verification</span>
+          <strong class="text-slate-200">Dr. Sarah Chen</strong>
+          <span class="block text-[10px] text-slate-500">Staff Systems Architect</span>
+        </div>
+        <div class="text-right">
+          <span class="text-[10px] uppercase block text-slate-500">Certificate Verification ID</span>
+          <strong class="text-emerald-400 font-bold" id="cert-code-text">
+            {{ certificate.certificate_code if certificate else 'CL-88F4A-ARCH' }}
+          </strong>
+          <span class="block text-[10px] text-slate-500">PostgreSQL Immutable Ledger</span>
+        </div>
+      </div>
+
+      <!-- Modal Action Buttons -->
+      <div class="pt-4 flex items-center justify-center gap-3">
+        <button
+          onclick="window.print()"
+          class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider shadow-md"
+        >
+          Print / Save PDF
+        </button>
+        <button
+          onclick="closeCertificateModal()"
+          class="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+        >
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function openCertificateModal() {
+    document.getElementById('certificate-modal').classList.remove('hidden');
+  }
+
+  function closeCertificateModal() {
+    document.getElementById('certificate-modal').classList.add('hidden');
+  }
+
+  /**
+   * AJAX Submission handler for scoring MCQ questions.
+   * Sends POST JSON payload to /quiz/<quiz_id>/submit
+   */
+  async function submitAssessment(event) {
+    event.preventDefault();
+
+    const form = document.getElementById('quiz-form');
+    const formData = new FormData(form);
+    const answers = {};
+
+    formData.forEach((value, key) => {
+      // Key format is "q_<id>"
+      const qId = key.replace('q_', '');
+      answers[qId] = value;
+    });
+
+    const submitBtn = document.getElementById('submit-quiz-btn');
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'Evaluating Answers...';
+
+    try {
+      const response = await fetch(`/quiz/{{ quiz.id }}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers: answers })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Show result banner
+        const banner = document.getElementById('result-banner');
+        const title = document.getElementById('result-status-title');
+        const scoreVal = document.getElementById('result-score-val');
+        const certBtn = document.getElementById('btn-show-cert');
+
+        banner.classList.remove('hidden');
+        scoreVal.innerText = `${data.score}%`;
+
+        if (data.passed) {
+          banner.className = "p-6 rounded-2xl border space-y-3 bg-emerald-950/40 border-emerald-500/40 text-emerald-100";
+          title.innerText = "🎉 Congratulations! You Passed the Assessment.";
+          certBtn.classList.remove('hidden');
+
+          if (data.certificate_code) {
+            document.getElementById('cert-code-text').innerText = data.certificate_code;
+          }
+        } else {
+          banner.className = "p-6 rounded-2xl border space-y-3 bg-rose-950/40 border-rose-500/40 text-rose-100";
+          title.innerText = "Assessment Not Passed (Score Below 80%)";
+          certBtn.classList.add('hidden');
+        }
+
+        // Scroll up smoothly to result banner
+        banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        alert(data.error || 'Evaluation error occurred.');
+      }
+    } catch (err) {
+      console.error('Quiz submission failed:', err);
+      alert('Network error while evaluating quiz.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerText = 'Submit for Grading';
+    }
+  }
+</script>
+{% endblock %}

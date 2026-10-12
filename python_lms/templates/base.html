@@ -1,0 +1,151 @@
+<!--
+================================================================================
+CLARITY LMS - Base Layout Template
+================================================================================
+File: templates/base.html
+Description: Master Jinja2 layout containing Tailwind CSS CDN, Google Fonts,
+             sticky responsive top navigation bar for all 5 pages, flash notifications,
+             and clean dark-mode engineering theme.
+================================================================================
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Clarity LMS - Systems Engineering Learning Management System{% endblock %}</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+    code, pre, .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased min-h-screen flex flex-col selection:bg-blue-600/30 selection:text-blue-300">
+
+  <!-- Top Sticky Navigation Bar -->
+  <header class="sticky top-0 z-40 w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-slate-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 gap-4">
+        
+        <!-- Brand Identity -->
+        <div class="flex items-center gap-8 shrink-0">
+          <a href="{{ url_for('home') }}" class="flex items-center gap-3 group text-left">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
+              <span class="text-white font-black text-lg">C</span>
+            </div>
+            <div>
+              <div class="text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
+                Clarity LMS
+                <span class="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">v2.4</span>
+              </div>
+              <div class="text-[10px] tracking-wider font-semibold text-slate-400 uppercase -mt-0.5">LEARNING MANAGEMENT SYSTEM</div>
+            </div>
+          </a>
+
+          <!-- Navigation Links for All 5 Pages -->
+          <nav class="hidden lg:flex items-center gap-1.5">
+            <a href="{{ url_for('home') }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
+              1. Home &amp; Catalog
+            </a>
+            <a href="{{ url_for('course_detail', course_id='arch-microservices-101') }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
+              2. Course Details
+            </a>
+            <a href="{{ url_for('learn', course_id='arch-microservices-101', lesson_id='les-1-1') }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
+              3. Student Video Player
+            </a>
+            <a href="{{ url_for('quiz', course_id='arch-microservices-101') }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
+              4. MCQ Quiz &amp; Certificate
+            </a>
+            <a href="{{ url_for('admin_dashboard') }}" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/30 transition-colors">
+              5. Admin Dashboard
+            </a>
+          </nav>
+        </div>
+
+        <!-- Right Side: User Profile & Quick Actions -->
+        <div class="flex items-center gap-3">
+          <div class="text-xs text-slate-400 hidden sm:block text-right">
+            <span class="font-bold text-white">{{ current_user.name if current_user else 'Alex Morgan' }}</span>
+            <p class="text-[10px] text-emerald-400 font-mono">{{ current_user.role|capitalize if current_user else 'Student' }} · Active</p>
+          </div>
+          <div class="w-9 h-9 rounded-full bg-slate-700 border-2 border-emerald-500/50 overflow-hidden shadow-sm">
+            <img src="{{ current_user.avatar if current_user and current_user.avatar else 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250' }}" alt="User Avatar" class="w-full h-full object-cover">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Mobile Navigation Bar Strip -->
+      <div class="flex lg:hidden overflow-x-auto py-2.5 gap-2 border-t border-slate-800 text-xs">
+        <a href="{{ url_for('home') }}" class="px-2.5 py-1 rounded bg-slate-800 text-slate-200 whitespace-nowrap">Catalog</a>
+        <a href="{{ url_for('course_detail', course_id='arch-microservices-101') }}" class="px-2.5 py-1 rounded bg-slate-800 text-slate-200 whitespace-nowrap">Details</a>
+        <a href="{{ url_for('learn', course_id='arch-microservices-101', lesson_id='les-1-1') }}" class="px-2.5 py-1 rounded bg-slate-800 text-slate-200 whitespace-nowrap">Player</a>
+        <a href="{{ url_for('quiz', course_id='arch-microservices-101') }}" class="px-2.5 py-1 rounded bg-slate-800 text-slate-200 whitespace-nowrap">Quiz</a>
+        <a href="{{ url_for('admin_dashboard') }}" class="px-2.5 py-1 rounded bg-indigo-600 text-white whitespace-nowrap">Admin</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Flash Notification Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
+        {% for category, message in messages %}
+          <div class="p-3.5 rounded-xl text-xs font-semibold flex items-center justify-between {{ 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' if category == 'success' else 'bg-blue-500/15 text-blue-300 border border-blue-500/30' if category == 'info' else 'bg-rose-500/15 text-rose-300 border border-rose-500/30' }}">
+            <span>{{ message }}</span>
+            <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white">&times;</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Main Content Container -->
+  <main class="flex-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Application Footer -->
+  <footer class="bg-slate-900 border-t border-slate-800 py-8 text-xs text-slate-400 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div>
+        <strong class="text-white">Clarity LMS</strong> &copy; 2026 Clarity Learning Systems Inc.
+        <span class="text-slate-500">· Powered by Python Flask &amp; PostgreSQL.</span>
+      </div>
+      <div class="flex items-center gap-6">
+        <a href="{{ url_for('home') }}" class="hover:text-white transition-colors">Course Catalog</a>
+        <a href="{{ url_for('course_detail', course_id='arch-microservices-101') }}" class="hover:text-white transition-colors">Course Details</a>
+        <a href="{{ url_for('admin_dashboard') }}" class="hover:text-white transition-colors">Admin Console</a>
+        <span class="font-mono text-slate-500">PostgreSQL 16 · SQLAlchemy 2.0</span>
+      </div>
+    </div>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

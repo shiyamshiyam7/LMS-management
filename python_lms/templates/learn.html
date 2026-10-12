@@ -1,0 +1,254 @@
+<!--
+================================================================================
+CLARITY LMS - Page 3: Student Video Learning Page
+================================================================================
+File: templates/learn.html
+Description: Interactive video learning player featuring a responsive split view:
+             left sidebar curriculum checklist with AJAX completion checkboxes,
+             right HTML5 video player, lecture notes, and downloadable PDF resources.
+================================================================================
+-->
+{% extends "base.html" %}
+
+{% block title %}{{ active_lesson.title }} - Clarity LMS{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+  
+  <!-- Top Navigation & Progress Status Bar -->
+  <div class="bg-slate-900 border-b border-slate-800 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <a
+        href="{{ url_for('course_detail', course_id=course.id) }}"
+        class="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors"
+      >
+        <span>&larr;</span>
+        <span>Back to Course Overview</span>
+      </a>
+      <span class="text-slate-600 hidden sm:inline">|</span>
+      <span class="text-xs font-bold text-white hidden sm:inline truncate max-w-xs">{{ course.title }}</span>
+    </div>
+
+    <!-- Real-time Progress Bar -->
+    <div class="flex items-center gap-3 text-xs">
+      <span class="text-slate-400">Course Progress:</span>
+      <div class="w-28 sm:w-36 h-2 rounded-full bg-slate-800 overflow-hidden">
+        <div
+          id="progress-bar-fill"
+          class="h-full bg-gradient-to-r from-blue-500 to-emerald-400 rounded-full transition-all duration-300"
+          style="width: {{ progress_percentage }}%"
+        ></div>
+      </div>
+      <span class="font-mono font-bold text-emerald-400" id="progress-percentage-text">{{ progress_percentage }}%</span>
+    </div>
+  </div>
+
+  <!-- Split Screen Workspace -->
+  <div class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+    
+    <!-- Left Sidebar: Lesson Checklist & Syllabus -->
+    <aside class="lg:w-88 xl:w-96 bg-slate-900/90 border-r border-slate-800 flex flex-col shrink-0 max-h-[400px] lg:max-h-[calc(100vh-112px)] overflow-y-auto">
+      <div class="p-4 border-b border-slate-800 bg-slate-900 sticky top-0 z-10 flex items-center justify-between">
+        <div>
+          <div class="text-[10px] font-mono uppercase tracking-wider text-blue-400 font-bold">Curriculum Checklist</div>
+          <h2 class="text-xs font-bold text-white uppercase tracking-wider mt-0.5">Lessons &amp; Labs</h2>
+        </div>
+        <a
+          href="{{ url_for('quiz', course_id=course.id) }}"
+          class="text-[11px] font-bold text-amber-400 hover:text-amber-300 px-2 py-1 rounded bg-amber-500/10 border border-amber-500/20"
+        >
+          Quiz &rarr;
+        </a>
+      </div>
+
+      <div class="p-3 space-y-4">
+        {% for mod in course.modules %}
+          <div class="space-y-1.5">
+            <div class="text-[11px] font-bold text-slate-400 px-2 py-1 flex items-center justify-between">
+              <span class="truncate">Module {{ mod.module_number }}: {{ mod.title }}</span>
+              <span class="font-mono text-[10px] text-slate-500">{{ mod.duration }}</span>
+            </div>
+
+            <div class="space-y-1">
+              {% for les in mod.lessons %}
+                {% set is_active = les.id == active_lesson.id %}
+                {% set is_done = les.id in completed_lesson_ids %}
+                <div
+                  class="p-2.5 rounded-xl flex items-center justify-between text-xs transition-colors gap-2 {{ 'bg-blue-600 text-white font-semibold shadow-md' if is_active else 'hover:bg-slate-800/80 text-slate-300 bg-slate-950/40' }}"
+                >
+                  <div class="flex items-center gap-2.5 truncate">
+                    <!-- Interactive AJAX Checkbox -->
+                    <input
+                      type="checkbox"
+                      id="check-{{ les.id }}"
+                      {{ 'checked' if is_done else '' }}
+                      onchange="toggleLessonComplete('{{ les.id }}', this)"
+                      class="w-4 h-4 rounded bg-slate-800 border-slate-700 text-emerald-500 focus:ring-0 cursor-pointer accent-emerald-500"
+                    >
+                    <a
+                      href="{{ url_for('learn', course_id=course.id, lesson_id=les.id) }}"
+                      class="truncate hover:underline"
+                    >
+                      {{ les.title }}
+                    </a>
+                  </div>
+
+                  <span class="text-[10px] opacity-75 font-mono shrink-0">
+                    {{ les.duration }}
+                  </span>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </aside>
+
+    <!-- Right Main Stage: HTML5 Video Player & Lecture Resources -->
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
+      
+      <!-- Video Player Card -->
+      <div class="rounded-2xl bg-black border border-slate-800 overflow-hidden shadow-2xl">
+        <div class="aspect-video bg-black relative flex items-center justify-center">
+          <video
+            id="lms-video-player"
+            controls
+            preload="metadata"
+            src="{{ active_lesson.video_url or 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' }}"
+            class="w-full h-full object-contain"
+          >
+            Your browser does not support the video tag.
+          </video>
+        </div>
+
+        <!-- Video Controls Bar Strip -->
+        <div class="p-4 sm:p-5 bg-slate-900 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold uppercase">
+                {{ active_lesson.lesson_type|upper }}
+              </span>
+              <h3 class="font-bold text-white text-base">{{ active_lesson.title }}</h3>
+            </div>
+            <p class="text-slate-400 text-xs mt-0.5">{{ active_lesson.subtitle }}</p>
+          </div>
+
+          <!-- Dynamic AJAX "Mark Complete" Button -->
+          {% set active_is_done = active_lesson.id in completed_lesson_ids %}
+          <button
+            type="button"
+            id="mark-complete-btn"
+            onclick="toggleActiveLesson('{{ active_lesson.id }}')"
+            class="py-2.5 px-5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shrink-0 {{ 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' if active_is_done else 'bg-emerald-600 hover:bg-emerald-500 text-white' }}"
+          >
+            <span id="btn-icon">{{ '✓' if active_is_done else '○' }}</span>
+            <span id="btn-text">{{ 'Completed (Click to undo)' if active_is_done else 'Mark as Complete' }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- PDF Resource Links & Architectural Lecture Notes -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Notes & Syllabus Summary (2 Cols) -->
+        <div class="lg:col-span-2 p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-white uppercase tracking-wider">Lesson Notes &amp; Theory</h4>
+            <span class="text-xs font-mono text-slate-500">PostgreSQL Relational Track</span>
+          </div>
+
+          <div class="text-xs text-slate-300 leading-relaxed space-y-3">
+            <p>
+              {{ active_lesson.notes or 'In this lesson, we study distributed system invariants, network partitioning models, and resilient consensus algorithms under real-world conditions.' }}
+            </p>
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-mono text-emerald-400">
+              $ toxiproxy-cli toxic add grpc_upstream -t latency -a latency=500 -a jitter=50
+            </div>
+          </div>
+        </div>
+
+        <!-- Downloadable PDF Resources (1 Col) -->
+        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 flex flex-col justify-between">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-white uppercase tracking-wider">Course Resources</span>
+              <span class="text-rose-400 font-bold">PDF</span>
+            </div>
+            
+            <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+              <p class="font-bold text-white text-xs leading-snug">
+                {{ active_lesson.pdf_title or 'Distributed Architecture Cheat Sheet.pdf' }}
+              </p>
+              <p class="text-[10px] text-slate-400">Official companion document · 8.4 MB</p>
+            </div>
+          </div>
+
+          <a
+            href="{{ active_lesson.pdf_url or '#' }}"
+            onclick="alert('Downloading companion PDF: {{ active_lesson.pdf_title or 'Lecture Blueprint.pdf' }}');"
+            class="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs text-center flex items-center justify-center gap-2 shadow-md transition-colors"
+          >
+            <span>Download PDF Resource</span>
+          </a>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  /**
+   * AJAX toggle function for marking lessons completed.
+   * Sends POST to /lessons/<lesson_id>/toggle-complete
+   */
+  async function toggleLessonComplete(lessonId, checkboxEl) {
+    try {
+      const response = await fetch(`/lessons/${lessonId}/toggle-complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        if (checkboxEl) {
+          checkboxEl.checked = data.completed;
+        }
+
+        // If this is the active lesson button, sync it
+        const activeBtn = document.getElementById('mark-complete-btn');
+        if (activeBtn && lessonId === '{{ active_lesson.id }}') {
+          syncActiveButtonState(data.completed);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to toggle completion:', err);
+    }
+  }
+
+  function toggleActiveLesson(lessonId) {
+    const cb = document.getElementById(`check-${lessonId}`);
+    toggleLessonComplete(lessonId, cb);
+  }
+
+  function syncActiveButtonState(isCompleted) {
+    const btn = document.getElementById('mark-complete-btn');
+    const btnText = document.getElementById('btn-text');
+    const btnIcon = document.getElementById('btn-icon');
+
+    if (isCompleted) {
+      btn.className = "py-2.5 px-5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shrink-0 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+      btnText.innerText = "Completed (Click to undo)";
+      btnIcon.innerText = "✓";
+    } else {
+      btn.className = "py-2.5 px-5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shrink-0 bg-emerald-600 hover:bg-emerald-500 text-white";
+      btnText.innerText = "Mark as Complete";
+      btnIcon.innerText = "○";
+    }
+  }
+</script>
+{% endblock %}

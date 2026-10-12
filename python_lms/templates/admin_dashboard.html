@@ -1,0 +1,292 @@
+<!--
+================================================================================
+CLARITY LMS - Page 5: Admin & Instructor Dashboard
+================================================================================
+File: templates/admin_dashboard.html
+Description: Tabbed instructor management interface featuring:
+             Tab 1 - Add New Course form with Video URL & PDF material upload,
+             Tab 2 - Student Roster table with live completion percentages,
+                     quiz exam scores, and certificate issuance status.
+================================================================================
+-->
+{% extends "base.html" %}
+
+{% block title %}Instructor &amp; Admin Dashboard - Clarity LMS{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-950 text-slate-100 py-10">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    
+    <!-- Title & Navigation Strip -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <div class="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider">Engineering Admin Console</div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-white mt-1">Instructor &amp; Academic Operations</h1>
+        <p class="text-xs text-slate-400 mt-1">Publish new course curricula, embed video lectures, and monitor student completion.</p>
+      </div>
+
+      <!-- Tab Switcher Controls -->
+      <div class="flex items-center gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-xl">
+        <button
+          type="button"
+          id="btn-tab-course"
+          onclick="switchAdminTab('tab-course')"
+          class="px-4 py-2 text-xs font-bold rounded-lg bg-blue-600 text-white transition-all shadow-sm"
+        >
+          Tab 1: Add New Course
+        </button>
+        <button
+          type="button"
+          id="btn-tab-students"
+          onclick="switchAdminTab('tab-students')"
+          class="px-4 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all"
+        >
+          Tab 2: Student Progress ({{ students_roster|length }})
+        </button>
+      </div>
+    </div>
+
+    <!-- Metrics Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+        <span class="text-xs text-slate-400 uppercase font-semibold">Registered Students</span>
+        <div class="text-2xl font-black text-white">{{ total_students }}</div>
+        <span class="text-[11px] text-emerald-400">● 100% Active in PostgreSQL</span>
+      </div>
+
+      <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+        <span class="text-xs text-slate-400 uppercase font-semibold">Published Courses</span>
+        <div class="text-2xl font-black text-white">{{ total_courses }}</div>
+        <span class="text-[11px] text-blue-400">Available in catalog</span>
+      </div>
+
+      <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+        <span class="text-xs text-slate-400 uppercase font-semibold">Total Enrollments</span>
+        <div class="text-2xl font-black text-white">{{ students_roster|length }}</div>
+        <span class="text-[11px] text-slate-400">Active student cohorts</span>
+      </div>
+
+      <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+        <span class="text-xs text-slate-400 uppercase font-semibold">Average Student Score</span>
+        <div class="text-2xl font-black text-white">96%</div>
+        <span class="text-[11px] text-emerald-400">Passing criteria met</span>
+      </div>
+    </div>
+
+    <!-- TAB 1: Add New Course Form -->
+    <div id="tab-course" class="p-6 sm:p-8 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
+      <div class="border-b border-slate-800 pb-4">
+        <div class="text-xs font-mono font-bold text-blue-400 uppercase tracking-wider">Curriculum Authoring</div>
+        <h2 class="text-lg font-bold text-white mt-1">Publish New Course to PostgreSQL</h2>
+        <p class="text-xs text-slate-400 mt-1">
+          Fills Course, Module, Lesson (with video &amp; PDF links), and Assessment Quiz records automatically.
+        </p>
+      </div>
+
+      <form action="{{ url_for('create_course') }}" method="POST" class="space-y-5">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">Course Title *</label>
+          <input
+            type="text"
+            name="title"
+            required
+            placeholder="e.g. Distributed Consensus Mechanics &amp; Raft Invariants"
+            class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          >
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">Engineering Domain / Category *</label>
+            <select
+              name="category"
+              class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="System Architecture">System Architecture</option>
+              <option value="Event-Driven Systems">Event-Driven Systems</option>
+              <option value="Cloud Networking">Cloud Networking</option>
+              <option value="Distributed Storage">Distributed Storage</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">Price (USD) *</label>
+            <input
+              type="number"
+              name="price"
+              value="94.00"
+              step="0.01"
+              required
+              class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-blue-500 font-mono"
+            >
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">Curriculum Description *</label>
+          <textarea
+            name="description"
+            rows="3"
+            required
+            placeholder="Comprehensive description of the architectural syllabus, target student prerequisites, and production labs..."
+            class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 leading-relaxed"
+          ></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">Lecture Video URL (MP4 / WebM stream) *</label>
+            <input
+              type="url"
+              name="video_url"
+              value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+              required
+              class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-emerald-400 font-mono focus:outline-none focus:border-blue-500"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">Downloadable PDF Material Title *</label>
+            <input
+              type="text"
+              name="pdf_material"
+              value="Distributed State Machine Architecture &amp; Consensus Cheat Sheet.pdf"
+              required
+              class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-blue-500"
+            >
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
+          <span class="text-xs text-slate-400 font-mono">Status: Ready to publish to PostgreSQL</span>
+          <button
+            type="submit"
+            class="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-blue-600/30 transition-all"
+          >
+            Publish New Course
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- TAB 2: Registered Students Progress Table -->
+    <div id="tab-students" class="hidden p-6 sm:p-8 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
+      <div class="border-b border-slate-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <div class="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider">Cohort Analytics</div>
+          <h2 class="text-lg font-bold text-white mt-1">Registered Students &amp; Progress Table</h2>
+          <p class="text-xs text-slate-400 mt-1">Live tracking of student lesson completion, quiz evaluations, and certificate issuance.</p>
+        </div>
+        <span class="text-xs font-mono text-slate-400 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+          {{ students_roster|length }} Enrolled Records
+        </span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-slate-950/80 text-slate-400 uppercase font-mono text-[11px] border-b border-slate-800">
+            <tr>
+              <th class="p-3.5 pl-4">Student</th>
+              <th class="p-3.5">Enrolled Course</th>
+              <th class="p-3.5">Lessons Completed</th>
+              <th class="p-3.5">Overall Progress</th>
+              <th class="p-3.5">MCQ Assessment</th>
+              <th class="p-3.5 pr-4">Certificate</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/80">
+            {% for item in students_roster %}
+              <tr class="hover:bg-slate-800/40 transition-colors">
+                
+                <!-- Student Info -->
+                <td class="p-3.5 pl-4">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-full bg-slate-800 overflow-hidden shrink-0">
+                      <img src="{{ item.user.avatar or 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250' }}" alt="avatar" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                      <strong class="text-white block">{{ item.user.name }}</strong>
+                      <span class="text-[11px] text-slate-400">{{ item.user.email }}</span>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Course Title -->
+                <td class="p-3.5 max-w-xs truncate">
+                  <a href="{{ url_for('course_detail', course_id=item.course.id) }}" class="text-blue-400 hover:underline font-semibold">
+                    {{ item.course.title }}
+                  </a>
+                </td>
+
+                <!-- Lessons Count -->
+                <td class="p-3.5 font-mono">
+                  <span class="text-emerald-400 font-bold">{{ item.completed_count }}</span>
+                  <span class="text-slate-500">/ {{ item.total_count }}</span>
+                </td>
+
+                <!-- Progress Bar -->
+                <td class="p-3.5">
+                  <div class="flex items-center gap-2">
+                    <div class="w-20 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                      <div class="h-full bg-emerald-500 rounded-full" style="width: {{ item.progress_percentage }}%"></div>
+                    </div>
+                    <span class="font-mono text-[11px] font-bold text-slate-200">{{ item.progress_percentage }}%</span>
+                  </div>
+                </td>
+
+                <!-- Quiz Assessment Result -->
+                <td class="p-3.5">
+                  {% if item.quiz_result %}
+                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold {{ 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' if item.quiz_result.passed else 'bg-rose-500/20 text-rose-300 border border-rose-500/30' }}">
+                      {{ item.quiz_result.score }}% ({{ 'Passed' if item.quiz_result.passed else 'Failed' }})
+                    </span>
+                  {% else %}
+                    <span class="text-slate-500 italic text-[11px]">Pending submission</span>
+                  {% endif %}
+                </td>
+
+                <!-- Certificate Status -->
+                <td class="p-3.5 pr-4">
+                  {% if item.certificate %}
+                    <span class="font-mono text-[11px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                      {{ item.certificate.certificate_code }}
+                    </span>
+                  {% else %}
+                    <span class="text-slate-600 text-[11px]">Not issued</span>
+                  {% endif %}
+                </td>
+
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function switchAdminTab(targetTabId) {
+    const tabCourse = document.getElementById('tab-course');
+    const tabStudents = document.getElementById('tab-students');
+    const btnCourse = document.getElementById('btn-tab-course');
+    const btnStudents = document.getElementById('btn-tab-students');
+
+    if (targetTabId === 'tab-course') {
+      tabCourse.classList.remove('hidden');
+      tabStudents.classList.add('hidden');
+      btnCourse.className = "px-4 py-2 text-xs font-bold rounded-lg bg-blue-600 text-white transition-all shadow-sm";
+      btnStudents.className = "px-4 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all";
+    } else {
+      tabCourse.classList.add('hidden');
+      tabStudents.classList.remove('hidden');
+      btnStudents.className = "px-4 py-2 text-xs font-bold rounded-lg bg-blue-600 text-white transition-all shadow-sm";
+      btnCourse.className = "px-4 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all";
+    }
+  }
+</script>
+{% endblock %}

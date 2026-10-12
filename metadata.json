@@ -1,0 +1,6 @@
+{
+  "name": "Clarity LMS - Systems Engineering Learning Management System",
+  "description": "Production-ready 5-page Learning Management System with interactive course catalog, syllabus video player, assessments, certificates, and instructor dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

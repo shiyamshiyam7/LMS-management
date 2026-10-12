@@ -1,0 +1,379 @@
+<!--
+================================================================================
+CLARITY LMS - Page 2: Course Details & Enrollment Page
+================================================================================
+File: templates/course_detail.html
+Description: Course details page containing syllabus curriculum accordion,
+             learning outcomes, instructor profile, and sticky enrollment CTA card.
+================================================================================
+-->
+{% extends "base.html" %}
+
+{% block title %}{{ course.title }} - Clarity LMS{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-950 text-slate-100 pb-16">
+  
+  <!-- Header & Hero Section -->
+  <section class="bg-slate-900 border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 space-y-6">
+      
+      <!-- Breadcrumb Navigation -->
+      <nav class="flex items-center gap-2 text-xs text-slate-400">
+        <a href="{{ url_for('home') }}" class="hover:text-white transition-colors">Catalog</a>
+        <span>&rsaquo;</span>
+        <a href="{{ url_for('home', category=course.category) }}" class="hover:text-white transition-colors">{{ course.category }}</a>
+        <span>&rsaquo;</span>
+        <span class="text-blue-400 font-semibold uppercase tracking-wider">Course Syllabus</span>
+      </nav>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Left Hero Column -->
+        <div class="lg:col-span-8 space-y-6">
+          
+          <div class="flex flex-wrap items-center gap-3 text-xs">
+            <span class="px-3 py-1 rounded-md font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              {{ course.badge }}
+            </span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+              ★ {{ course.rating }} Rating · {{ course.review_count }} verified reviews
+            </span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+              Updated This Month
+            </span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+              PostgreSQL Verified
+            </span>
+          </div>
+
+          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight">
+            {{ course.title }}
+          </h1>
+
+          <p class="text-slate-300 text-base sm:text-lg leading-relaxed">
+            {{ course.short_description }}
+          </p>
+
+          <!-- Instructor Profile Card -->
+          <div class="p-4 sm:p-5 rounded-2xl bg-slate-800/80 border border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div class="w-16 h-16 rounded-xl bg-slate-700 overflow-hidden shrink-0 border-2 border-emerald-500/40 shadow-sm">
+              <img
+                src="{{ course.instructor_avatar or 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=250' }}"
+                alt="{{ course.instructor_name }}"
+                class="w-full h-full object-cover"
+              >
+            </div>
+            <div class="space-y-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-base font-bold text-white">{{ course.instructor_name }}</span>
+                <span class="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                  Staff Systems Architect &amp; ex-Google Principal
+                </span>
+              </div>
+              <p class="text-xs text-slate-300">
+                {{ course.instructor_bio or '16+ years designing distributed engines powering millions of queries per second.' }}
+              </p>
+              <div class="flex items-center gap-4 pt-1 text-xs text-slate-400">
+                <span>★ 4.9 Instructor Rating</span>
+                <span>·</span>
+                <span>45,820 Students Taught</span>
+                <span>·</span>
+                <span>Official Instructor</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right CTA Card (Sticky Desktop) -->
+        <div class="lg:col-span-4">
+          <div class="rounded-2xl bg-slate-900 border border-slate-800 p-6 space-y-6 shadow-2xl sticky top-24">
+            
+            <!-- Video Preview Thumbnail -->
+            <div class="aspect-video rounded-xl overflow-hidden bg-slate-950 relative border border-slate-800 group">
+              <img
+                src="{{ course.thumbnail or 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=800' }}"
+                alt="{{ course.title }}"
+                class="w-full h-full object-cover"
+              >
+              <div class="absolute inset-0 bg-slate-950/40 flex items-center justify-center">
+                <div class="w-12 h-12 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  ▶
+                </div>
+              </div>
+              <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/80 font-mono text-[10px] text-white">
+                {{ course.preview_duration }} Preview
+              </span>
+            </div>
+
+            <!-- Pricing Box -->
+            <div class="space-y-1">
+              <div class="flex items-baseline gap-2">
+                <span class="text-3xl font-extrabold text-white">${{ "%.2f"|format(course.price) }}</span>
+                <span class="text-sm text-slate-500 line-through">${{ "%.2f"|format(course.original_price) }}</span>
+                <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">37% OFF</span>
+              </div>
+              <p class="text-[11px] text-slate-400">Full lifetime access · Includes all modules &amp; certificate</p>
+            </div>
+
+            <!-- Enrollment Action Button -->
+            {% if is_enrolled %}
+              <div class="space-y-3">
+                <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold text-center">
+                  ✓ You are enrolled in this course
+                </div>
+                <a
+                  href="{{ url_for('learn', course_id=course.id, lesson_id=first_lesson_id or 'les-1-1') }}"
+                  class="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2"
+                >
+                  <span>Go to Student Video Player &rarr;</span>
+                </a>
+              </div>
+            {% else %}
+              <form action="{{ url_for('enroll', course_id=course.id) }}" method="POST">
+                <button
+                  type="submit"
+                  class="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-sm tracking-wide shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2"
+                >
+                  <span>Enroll Now - ${{ "%.2f"|format(course.price) }}</span>
+                </button>
+              </form>
+            {% endif %}
+
+            <!-- What's Included Feature List -->
+            <div class="border-t border-slate-800 pt-4 space-y-2.5 text-xs text-slate-300">
+              <div class="font-bold text-white text-xs uppercase tracking-wider mb-2">This Masterclass Includes:</div>
+              <div class="flex items-center gap-2">
+                <span class="text-emerald-400 font-bold">✓</span>
+                <span>Full HD video lectures with streaming controls</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-emerald-400 font-bold">✓</span>
+                <span>Downloadable architecture PDF blueprints</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-emerald-400 font-bold">✓</span>
+                <span>Automated MCQ assessment quiz (80% passing)</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-emerald-400 font-bold">✓</span>
+                <span>Accredited certificate of completion</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-emerald-400 font-bold">✓</span>
+                <span>Direct Q&amp;A instructor discussion access</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Syllabus Accordion & Course Details Section -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- Left Content: Syllabus Accordion -->
+      <div class="lg:col-span-8 space-y-8">
+        
+        <!-- Key Outcomes Box -->
+        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold uppercase tracking-wider text-emerald-400">WHAT YOU WILL MASTER</span>
+            <span class="text-slate-400">Hands-on Architecture Rigor</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 rounded bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">✓</div>
+              <div>
+                <h4 class="font-semibold text-white">Distributed Consensus Invariants</h4>
+                <p class="text-slate-400 mt-0.5">Deep-dive into Raft leader elections, heartbeat quorums, and majority voting barriers.</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 rounded bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">✓</div>
+              <div>
+                <h4 class="font-semibold text-white">Saga Orchestration &amp; Compensations</h4>
+                <p class="text-slate-400 mt-0.5">Replace slow two-phase commit with resilient forward steps and semantic undo transactions.</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 rounded bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">✓</div>
+              <div>
+                <h4 class="font-semibold text-white">Toxiproxy Fault Injection Labs</h4>
+                <p class="text-slate-400 mt-0.5">Simulate network partitioning, 500ms latency spikes, and downstream packet drops.</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 rounded bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">✓</div>
+              <div>
+                <h4 class="font-semibold text-white">Idempotent Event Consumers</h4>
+                <p class="text-slate-400 mt-0.5">Design deduplication barriers and outbox tables ensuring exactly-once business effects.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Syllabus Accordion Header -->
+        <div class="space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 class="text-2xl font-extrabold text-white">Course Curriculum &amp; Syllabus</h2>
+              <p class="text-xs text-slate-400 mt-0.5">
+                {{ course.modules|length }} modules · 
+                {% set total_lessons = 0 %}
+                {% for m in course.modules %}{% set total_lessons = total_lessons + m.lessons|length %}{% endfor %}
+                {{ total_lessons }} lessons total
+              </p>
+            </div>
+            
+            <button
+              onclick="toggleAllModules()"
+              class="text-xs font-semibold text-blue-400 hover:text-blue-300 self-start sm:self-auto"
+            >
+              Expand / Collapse All
+            </button>
+          </div>
+
+          <!-- Accordion Modules List -->
+          <div class="space-y-3" id="syllabus-accordion">
+            {% for mod in course.modules %}
+              <div class="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden transition-colors">
+                
+                <!-- Accordion Header Button -->
+                <button
+                  type="button"
+                  onclick="toggleModule('mod-content-{{ mod.id }}', 'icon-{{ mod.id }}')"
+                  class="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 hover:bg-slate-800/50 transition-colors"
+                >
+                  <div class="flex items-center gap-3">
+                    <span class="w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 font-mono text-xs font-bold flex items-center justify-center shrink-0">
+                      {{ mod.module_number }}
+                    </span>
+                    <div>
+                      <h3 class="text-sm font-bold text-white">{{ mod.title }}</h3>
+                      <p class="text-[11px] text-slate-400 font-mono mt-0.5">{{ mod.lessons|length }} Lessons · {{ mod.duration }}</p>
+                    </div>
+                  </div>
+                  <div class="text-slate-400 text-xs font-mono shrink-0 transition-transform duration-200" id="icon-{{ mod.id }}">
+                    ▼
+                  </div>
+                </button>
+
+                <!-- Accordion Collapsible Body -->
+                <div id="mod-content-{{ mod.id }}" class="border-t border-slate-800/80 divide-y divide-slate-800/60 bg-slate-950/40">
+                  {% for les in mod.lessons %}
+                    <div class="p-3.5 sm:px-5 flex items-center justify-between text-xs hover:bg-slate-800/30 transition-colors gap-3">
+                      <div class="flex items-center gap-3 truncate">
+                        <span class="text-slate-500 font-mono">▶</span>
+                        <div class="truncate">
+                          <span class="font-semibold text-slate-200 hover:text-white">{{ les.title }}</span>
+                          <span class="text-[11px] text-slate-400 block truncate">{{ les.subtitle }}</span>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center gap-3 shrink-0">
+                        {% if les.pdf_title %}
+                          <span class="text-[10px] font-mono text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 hidden sm:inline-block">
+                            PDF Included
+                          </span>
+                        {% endif %}
+                        <span class="font-mono text-slate-400 text-[11px]">{{ les.duration }}</span>
+                        <a
+                          href="{{ url_for('learn', course_id=course.id, lesson_id=les.id) }}"
+                          class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold"
+                        >
+                          Watch
+                        </a>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Assessment Quiz Teaser Card -->
+        <div class="p-6 rounded-2xl bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border border-blue-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div class="text-xs font-mono font-bold text-blue-400 uppercase tracking-wider">Cap-Stone Accreditation</div>
+            <h3 class="text-lg font-bold text-white mt-1">Interactive MCQ Scenario Assessment</h3>
+            <p class="text-xs text-slate-300 mt-1 max-w-xl">
+              Complete the course lessons and achieve 80% or higher to unlock an accredited certificate signed by Dr. Sarah Chen.
+            </p>
+          </div>
+          <a
+            href="{{ url_for('quiz', course_id=course.id) }}"
+            class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider shrink-0 shadow-lg shadow-blue-600/30"
+          >
+            Take Assessment Quiz &rarr;
+          </a>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Verification & Requirements -->
+      <div class="lg:col-span-4 space-y-6">
+        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 text-xs">
+          <h4 class="font-bold text-white text-sm uppercase tracking-wider">Prerequisites</h4>
+          <ul class="space-y-2 text-slate-300 list-disc pl-4">
+            <li>Working knowledge of Python, Go, or Java backend programming</li>
+            <li>Basic familiarity with HTTP APIs and relational databases</li>
+            <li>Docker installed locally for running lab container mocks</li>
+          </ul>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 text-xs">
+          <h4 class="font-bold text-white text-sm uppercase tracking-wider">Database Persistence</h4>
+          <p class="text-slate-400 leading-relaxed">
+            All user course enrollments, module completions, and quiz grades are stored directly in PostgreSQL using <code class="text-emerald-400 font-mono">Flask-SQLAlchemy</code>.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function toggleModule(bodyId, iconId) {
+    const el = document.getElementById(bodyId);
+    const icon = document.getElementById(iconId);
+    if (!el) return;
+    if (el.classList.contains('hidden')) {
+      el.classList.remove('hidden');
+      icon.style.transform = 'rotate(0deg)';
+    } else {
+      el.classList.add('hidden');
+      icon.style.transform = 'rotate(-90deg)';
+    }
+  }
+
+  function toggleAllModules() {
+    const bodies = document.querySelectorAll('[id^="mod-content-"]');
+    const icons = document.querySelectorAll('[id^="icon-"]');
+    const anyHidden = Array.from(bodies).some(b => b.classList.contains('hidden'));
+    
+    bodies.forEach(b => {
+      if (anyHidden) {
+        b.classList.remove('hidden');
+      } else {
+        b.classList.add('hidden');
+      }
+    });
+
+    icons.forEach(ic => {
+      ic.style.transform = anyHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+    });
+  }
+</script>
+{% endblock %}
